@@ -1,0 +1,163 @@
+/**
+ * The server class.
+ */
+
+package chat_client;
+
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+import java.util.ArrayList;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+
+public class Server {
+		/**
+		 * serverSocket listens for incoming connections from clients
+		 */
+		private ServerSocket serverSocket;
+		
+		public Server(ServerSocket serverSocket) {
+			this.serverSocket = serverSocket;
+		}
+		
+		/**
+		 * Starts the server.
+		 * accept() blocks until connection is accepted
+		 * When the server receives a connection request, accept() is called and a socket object is returned.
+		 * The client communicates with the server through this socket.
+		 */
+		public void startServer() {
+			
+			try {
+				
+				while (!serverSocket.isClosed()) {
+					
+					Socket socket = serverSocket.accept();
+					System.out.println("A new client has connected!");
+					
+					/*
+					 * Responsible for communicating with each client
+					 */
+					ClientHandler clientHandler = new ClientHandler(socket);
+					
+					Thread thread = new Thread(clientHandler);
+					thread.start();
+					
+				}
+			}
+			
+			catch (IOException e) {
+				
+				closeServerSocket();
+			}
+		}
+		
+		public void closeServerSocket() {
+			
+			try {
+					if (serverSocket != null) {
+						serverSocket.close();
+					}
+			}
+			catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		public static void main(String[] args) throws IOException{
+			
+			// listens on port 1234
+			ServerSocket serverSocket = new ServerSocket(1234);
+			Server server = new Server(serverSocket);
+			server.startServer();
+			
+		}
+		
+		
+		/**
+		 * ClientHandler class
+		 * implements runnable so instances will be executed on different threads
+		 */
+
+
+		
+
+		private class ClientHandler implements Runnable{
+			
+
+			// ArrayList of all ClientHandlers
+			// Purpose: loop through and send message to each client
+			
+			public static ArrayList<ClientHandler> clientHandlers= new ArrayList<>();
+			
+			// Socket that is passed from the server class
+			 
+			private Socket socket;
+			// read data that sent from the client
+			private BufferedReader in;
+			
+			//Purpose: send message to client
+			private PrintWriter out;
+			private String username;
+			
+			/**
+			 * Will be initiated with socket object from server class
+			 * @param socket socket object from the server class
+			 */
+			public ClientHandler(Socket socket) {
+				
+				try {
+					this.socket = socket;
+					// convert byte stream to character stream
+					// BufferedWriter improves performance by writing data in chunks instead of single bytes
+					// Write data to socket
+					this.out = new PrintWriter(socket.getOutputStream(), true);;
+					// Read data to socket
+					this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+					this.username = in.readLine();
+					clientHandlers.add(this);
+					
+					broadCastMsg("SERVER: " + username + " has entered the chat!");
+				}
+				catch (IOException e) {
+					e.printStackTrace();
+				}
+				
+			}
+			
+			public void broadCastMsg(String msg) {
+				for (ClientHandler clientHandler : clientHandlers) {
+		      	  
+		      	  if (!clientHandler.username.equals(username)) {
+		      		  clientHandler.out.println(msg);
+		      	  }  
+		        }
+			}
+			
+			@Override
+			public void run() {
+			      try {
+			          String inputLine;
+			          while ((inputLine = in.readLine()) != null) {
+			              broadCastMsg(inputLine);
+			          }
+			      } catch (IOException e) {
+			          System.out.println("An error occurred: " + e.getMessage());
+			      } finally {
+			    	  broadCastMsg("SERVER: " + username + " has left the chat!");
+			          try {
+			              in.close();
+			              out.close();
+			              socket.close();
+			              clientHandlers.remove(this);
+			          } catch (IOException e) {
+			              e.printStackTrace();
+			          }
+			      }
+			  }
+		}
+
+}

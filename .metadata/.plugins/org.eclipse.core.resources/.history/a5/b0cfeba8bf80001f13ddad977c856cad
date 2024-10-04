@@ -1,0 +1,141 @@
+/**
+ * Client class
+ */
+
+package chat_client;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.net.Socket;
+
+import javax.swing.SwingUtilities;
+
+public class Client {
+	
+	private Socket socket;
+	private BufferedReader br;
+	private BufferedWriter bw;
+	private String username;
+	private ClientWindow window;
+	
+	/**
+	 * Constructor for the Client. 
+	 * @param socket
+	 * @param userName
+	 */
+	public Client(String username, ClientWindow window) {
+		try {
+			this.username = username;
+			this.window = window;
+			socket = new Socket("localhost", 1234);
+			this.bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+			this.br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+		} catch (IOException e){
+			closeClient(socket, br, bw);
+		}
+		
+	}
+	
+	
+	public void setUserName(String userName) {
+		try {
+			bw.write(userName);
+			bw.newLine();
+			bw.flush();
+		} catch (IOException e) {
+			closeClient(socket, br, bw);
+		}
+	}
+	
+	public void sendMsg(String msg) {
+		try {
+				bw.write(username + ": " + msg);
+				bw.newLine();
+				bw.flush();
+			
+		} catch (IOException e) {
+			closeClient(socket, br, bw);
+		}
+		
+	}
+	/**
+	 * Initial message that user has connected and for sending messages
+	 */
+	/*public void sendMsg(Scanner sc) {
+		
+		try {
+			bw.write(userName);
+			bw.newLine();
+			bw.flush();
+			
+			while (socket.isConnected()) {
+				String msg = sc.nextLine();
+				
+				bw.write(userName + ": " + msg);
+				bw.newLine();
+				bw.flush();
+			}
+			
+		} catch (IOException e) {
+			closeClient(socket, br, bw, sc);
+		} finally {
+			closeClient(socket, br, bw, sc);
+		}
+	}*/
+	/**
+	 * Listens for messages.
+	 * Runs in new thread since it blocks while waiting for messages from other clients
+	 * Runs in a new thread so the program doesn't stop and prevents the user from sending messages
+	 * Create new thread and pass runnable object
+	 */
+	public void onMessageReceived() {
+		
+	}
+	
+	public void listenForMsg() {
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				//String incomingMsg;
+				
+				while (socket.isConnected()) {
+					try {
+						String incomingMsg = br.readLine();
+						System.out.println(incomingMsg);
+						
+						window.receiveMsg(incomingMsg);
+					    
+					} catch (IOException e) {
+						closeClient(socket, br, bw);
+					}
+				}
+				
+			}
+			
+		}).start();
+	}
+	
+	public void closeClient(Socket socket, BufferedReader br, BufferedWriter bw) {
+		try {
+			if (socket != null) {
+				socket.close();
+			}
+			if (br != null) {
+				br.close();
+			}
+			if (bw != null) {
+				bw.close();
+			}
+			
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	
+
+}

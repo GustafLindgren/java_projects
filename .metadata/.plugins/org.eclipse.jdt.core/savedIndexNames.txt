@@ -1,0 +1,4 @@
+INDEX VERSION 1.134+/home/gustaf/eclipse-workspace/.metadata/.plugins/org.eclipse.jdt.core
+3664707710.index
+3314885267.index
+1865797976.index

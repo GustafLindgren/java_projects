@@ -1,0 +1,64 @@
+package chat_client;
+
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+
+import javax.swing.BorderFactory;
+import javax.swing.JTextPane;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+
+
+
+@SuppressWarnings("serial")
+public class ClientTextArea extends JTextPane{
+	
+	
+	public ClientTextArea(Color foreground, Color background, Font font, int width, int height) {
+		
+		//new JScrollPane(this);
+		//this.setPreferredSize(new Dimension(width, height));
+		// this.setRows(20);
+		// this.setColumns(48);
+		this.setPreferredSize(new Dimension(width, height));
+		this.setBackground(background);
+		this.setForeground(foreground);
+		this.setCaretColor(foreground);
+		this.setEditable(false);
+		this.setBorder(BorderFactory.createLineBorder(foreground, 1));
+		this.setFont(font);
+	}
+	
+	// copied from JTextArea append
+	public void append(String str) {
+        Document doc = getDocument();
+        if (doc != null) {
+            try {
+                doc.insertString(doc.getLength(), str, null);
+            } catch (BadLocationException e) {
+            }
+        }
+    }
+	
+	public void appendMsg(String msg, String username, Color foreground, Color userColor) {
+		
+		Document doc = getDocument();
+		SimpleAttributeSet usernameAttr = new SimpleAttributeSet();
+        StyleConstants.setForeground(usernameAttr, userColor);
+        SimpleAttributeSet messageAttr = new SimpleAttributeSet();
+        StyleConstants.setForeground(messageAttr, foreground);
+        String message = "[" + new SimpleDateFormat("HH:mm:ss").format(new Date()) + "]
+		
+        try {
+            doc.insertString(doc.getLength(), username, usernameAttr);
+            doc.insertString(doc.getLength(), ": ", null); // Insert a colon with default attributes
+            doc.insertString(doc.getLength(), msg, messageAttr);
+            doc.insertString(doc.getLength(), "\n", null);
+        } catch (BadLocationException e2) {
+            e2.printStackTrace();
+        }
+	}
+}
